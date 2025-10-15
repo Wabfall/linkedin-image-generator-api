@@ -1,8 +1,8 @@
+// src/app/api/linkedin-image/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import satori, { SatoriOptions } from 'satori'
 import fs from 'fs'
 import path from 'path'
-import { createRequire } from 'module'
 import type { ReactNode } from 'react'
 
 export const runtime = 'nodejs'
@@ -87,21 +87,6 @@ async function imageToDataUrl(url: string): Promise<string | null> {
     }
 }
 
-// ====== Resvg WASM init ======
-let resvgWasmReady = false
-const require = createRequire(import.meta.url)
-async function getResvg() {
-    const { Resvg, initWasm } = await import('@resvg/resvg-wasm')
-    if (!resvgWasmReady) {
-        // Résout le binaire wasm directement dans node_modules
-        const wasmPath = require.resolve('@resvg/resvg-wasm/index_bg.wasm')
-        const wasmBin = fs.readFileSync(wasmPath)
-        await initWasm(wasmBin)
-        resvgWasmReady = true
-    }
-    return { Resvg }
-}
-
 // Healthcheck
 export async function GET() {
     return NextResponse.json({ ok: true, message: 'POST an object to get a PNG back.' })
@@ -157,7 +142,7 @@ export async function POST(req: NextRequest) {
 
         const options: SatoriOptions = { width: W, height: H, fonts }
 
-        // --- Body nodes: chaque paragraphe => container flex + wrap inline en <span>
+        // --- Corps de texte : containers flex + wrap inline dans un <span> unique
         const bodyNodes = paragraphsWithWrap(splitParagraphs(textMarkdown), palette)
 
         const ReactionIcon = ({ bg }: { bg: string }) => ({
@@ -282,8 +267,8 @@ export async function POST(req: NextRequest) {
 
         const svg = await satori(satoriInput, options)
 
-        // Resvg WASM (init via fs + resolve)
-        const { Resvg } = await getResvg()
+        // ⬇️ Import NATIF dynamique (pas de WASM ici)
+        const { Resvg } = await import('@resvg/resvg-js')
         const resvg = new Resvg(svg as string, { fitTo: { mode: 'width', value: W } })
         const pngData = resvg.render().asPng()
 

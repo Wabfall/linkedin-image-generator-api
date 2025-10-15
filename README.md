@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧩 LinkedIn Post Generator API
 
-## Getting Started
+Une API **Next.js** permettant de **générer dynamiquement une image PNG** simulant un post LinkedIn.  
+Elle supporte le markdown simple (**gras**, *italique*, [liens](#)), l’affichage du nom, prénom, photo de profil, intitulé, nombre de réactions/commentaires et tout le **cadre visuel d’un post LinkedIn**.
 
-First, run the development server:
+Cette API peut être utilisée pour :
+- Créer des aperçus d’articles LinkedIn pour un site web ou un blog,
+- Générer des visuels dynamiques (Open Graph images),
+- Simuler des posts pour des mockups ou présentations.
+
+---
+
+## ⚙️ Technologies utilisées
+
+- **Next.js App Router** (API route `/api/linkedin-image`)
+- **Satori** → rendu SVG depuis un arbre React-like
+- **@resvg/resvg-js** → conversion SVG → PNG haute qualité
+- **Node.js runtime**
+- **TypeScript**
+- **Fonts locales (Inter)**
+
+---
+
+## 🚀 Lancer le projet en local
+
+### 1. Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/<ton_repo>/linkedin-post-generator-api.git
+cd linkedin-post-generator-api
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 2. Structure minimale
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+src/
+  app/
+    api/
+      linkedin-image/
+        route.ts     ← API principale
+public/
+  fonts/
+    Inter-Regular.ttf
+    Inter-Bold.ttf
+next.config.mjs
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+⚠️ Les fichiers de police sont obligatoires.
+Télécharge les polices Inter depuis https://fonts.google.com/specimen/Inter et place-les dans public/fonts/.
 
-## Learn More
+## 3. Lancer le serveur
 
-To learn more about Next.js, take a look at the following resources:
+```
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+L’API sera disponible sur :
+👉 http://localhost:3000/api/linkedin-image
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+🧪 Tester l’API
+✅ Vérifier le healthcheck
+curl http://localhost:3000/api/linkedin-image
 
-## Deploy on Vercel
+Réponse attendue :
+```bash
+{"ok":true,"message":"POST an object to get a PNG back."}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+🖼️ Générer un post LinkedIn (exemple)
+```bash
+curl -sS -X POST http://localhost:3000/api/linkedin-image \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Alex",
+    "lastName": "Martin",
+    "headline": "Software Engineer @Example",
+    "timeAgo": "2 h",
+    "textMarkdown": "Hello **LinkedIn**! This is *awesome* 🚀",
+    "reactions": 123,
+    "comments": 45
+  }' \
+  --output linkedin-post.png
+  ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🔹 Cette commande génère un fichier linkedin-post.png dans le dossier courant.
+🔹 Ne pas utiliser -i avec --output, sinon les en-têtes HTTP seront écrits dans le fichier.
+
+🧩 Paramètres de l’API
+Champ	Type	Obligatoire	Description
+firstName	string	✅	Prénom de l’auteur
+lastName	string	✅	Nom de l’auteur
+headline	string	❌	Intitulé de poste
+profileImageUrl	string (URL)	❌	Photo de profil (optionnelle)
+timeAgo	string	❌	Ex. "1 h", "2 j", etc.
+textMarkdown	string	✅	Corps du post (markdown léger supporté)
+reactions	number	❌	Nombre de réactions
+comments	number	❌	Nombre de commentaires
+theme	object	❌	Personnalisation des couleurs
+size	object	❌	Largeur/hauteur personnalisées
+
+Exemple :
+
+{
+  "theme": {
+    "background": "#F3F2EF",
+    "card": "#FFFFFF",
+    "text": "#1D2226"
+  },
+  "size": {
+    "width": 1080,
+    "height": 1350
+  }
+}
+
+🧠 Notes techniques
+
+L’API utilise Satori pour générer du SVG en mémoire.
+
+Puis Resvg (via @resvg/resvg-js) convertit ce SVG en PNG haute résolution.
+
+Fonctionne uniquement côté runtime Node.js (export const runtime = 'nodejs').
+
+Aucune dépendance externe ni accès à une API distante : tout est calculé localement.
