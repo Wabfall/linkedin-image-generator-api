@@ -1,6 +1,7 @@
 // src/lib/og/post.ts
 import type { Palette } from './theme'
 import { paragraphsWithWrap } from './markdown'
+import { IconGlobe } from './icons'
 import { loadReactiveIcons, ReactionBadge } from './reactions'
 import { ActionsBar } from './actions'
 
@@ -83,7 +84,28 @@ export function buildSatoriInput(input: PostInput) {
                                             children: [
                                                 { type: 'div', props: { style: { fontSize: 28, fontWeight: 700, color: palette.text }, children: `${firstName} ${lastName}` } },
                                                 { type: 'div', props: { style: { fontSize: 22, color: palette.subtext, marginTop: 2 }, children: headline } },
-                                                { type: 'div', props: { style: { fontSize: 18, color: palette.subtext, marginTop: 2 }, children: timeAgo.startsWith('•') ? timeAgo : `• ${timeAgo}` } },
+
+                                                // Time + bullet + globe
+                                                {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: {
+                                                            marginTop: 2,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 8,
+                                                            color: palette.subtext,
+                                                            fontSize: 18,
+                                                            lineHeight: 1,
+                                                            whiteSpace: 'nowrap'
+                                                        },
+                                                        children: [
+                                                            { type: 'span', props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') } },
+                                                            { type: 'span', props: { children: '•' } },
+                                                            IconGlobe(),
+                                                        ]
+                                                    }
+                                                },
                                             ]
                                         }
                                     }
@@ -142,13 +164,7 @@ export function buildSatoriInput(input: PostInput) {
                                             },
                                             children: [
                                                 `${comments.toLocaleString()} comments`,
-                                                {
-                                                    type: 'span',
-                                                    props: {
-                                                        style: { opacity: 0.6 },
-                                                        children: '•'
-                                                    }
-                                                },
+                                                { type: 'span', props: { style: { opacity: 0.6 }, children: '•' } },
                                                 `${reposts.toLocaleString()} reposts`
                                             ]
                                         }
