@@ -51,23 +51,25 @@ Télécharge les polices Inter depuis https://fonts.google.com/specimen/Inter et
 
 ## 3. Lancer le serveur
 
-```
+```bash
 npm run dev
 ```
 
 L’API sera disponible sur :
-👉 http://localhost:3000/api/linkedin-image
+👉 [http://localhost:3000/api/linkedin-image](http://localhost:3000/api/linkedin-image)
 
 🧪 Tester l’API
 ✅ Vérifier le healthcheck
-curl http://localhost:3000/api/linkedin-image
+curl [http://localhost:3000/api/linkedin-image](http://localhost:3000/api/linkedin-image)
 
 Réponse attendue :
+
 ```bash
 {"ok":true,"message":"POST an object to get a PNG back."}
 ```
 
 🖼️ Générer un post LinkedIn (exemple)
+
 ```bash
 curl -sS -X POST http://localhost:3000/api/linkedin-image \
   -H "Content-Type: application/json" \
@@ -78,13 +80,62 @@ curl -sS -X POST http://localhost:3000/api/linkedin-image \
     "timeAgo": "2 h",
     "textMarkdown": "Hello **LinkedIn**! This is *awesome* 🚀",
     "reactions": 123,
-    "comments": 45
+    "comments": 45,
+    "reposts": 12
   }' \
   --output linkedin-post.png
   ```
 
 🔹 Cette commande génère un fichier linkedin-post.png dans le dossier courant.
 🔹 Ne pas utiliser -i avec --output, sinon les en-têtes HTTP seront écrits dans le fichier.
+
+🖼️ Exemple 2 – Avec photo de profil distante
+
+```bash
+curl -sS -X POST http://localhost:3000/api/linkedin-image \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Nina",
+    "lastName": "Robert",
+    "headline": "Product Designer",
+    "textMarkdown": "New **UI Kit** ready for launch ✨",
+    "reactions": 120,
+    "comments": 18,
+    "reposts": 5,
+    "profileImageUrl": "https://picsum.photos/200"
+  }' \
+  --output linkedin-post-photo.png
+```
+
+🧩 Exemple 3 – Avatar via SVG inline
+
+```bash
+curl -sS -X POST http://localhost:3000/api/linkedin-image \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Nina",
+    "lastName": "Robert",
+    "headline": "Product Designer",
+    "textMarkdown": "Avatar via **inline SVG**",
+    "profileSvgMarkup": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" viewBox=\"0 0 64 64\"><circle cx=\"32\" cy=\"32\" r=\"32\" fill=\"#E5E7EB\"/><text x=\"50%\" y=\"52%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"Inter,Arial\" font-size=\"28\" fill=\"#374151\">NR</text></svg>"
+  }' \
+  --output linkedin-post-svg.png
+```
+
+🧩 Exemple 4 – Avatar depuis un fichier public
+
+```bash
+curl -sS -X POST http://localhost:3000/api/linkedin-image \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Nina",
+    "lastName": "Robert",
+    "headline": "Product Designer",
+    "textMarkdown": "Avatar depuis **/public/icons/avatar-default.svg**",
+    "profileSvgPublicPath": "icons/avatar-default.svg"
+  }' \
+  --output linkedin-post-public.png
+```
 
 🧩 Paramètres de l’API
 Champ	Type	Obligatoire	Description
