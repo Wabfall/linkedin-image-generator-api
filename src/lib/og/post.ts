@@ -15,6 +15,7 @@ export type PostInput = {
     textMarkdown: string
     reactions: number
     comments: number
+    reposts: number
     palette: Palette
 }
 
@@ -22,7 +23,7 @@ export function buildSatoriInput(input: PostInput) {
     const {
         W, H, profileDataUrl,
         firstName, lastName, headline, timeAgo,
-        textMarkdown, reactions, comments, palette
+        textMarkdown, reactions, comments, reposts, palette
     } = input
 
     const bodyNodes = paragraphsWithWrap(
@@ -106,7 +107,7 @@ export function buildSatoriInput(input: PostInput) {
                         { type: 'div', props: { style: { height: 20 } } },
                         { type: 'div', props: { style: { height: 12 } } },
 
-                        // Reactions + comments counts (with local reactive icons)
+                        // Reactions + comments + reposts
                         {
                             type: 'div',
                             props: {
@@ -118,11 +119,40 @@ export function buildSatoriInput(input: PostInput) {
                                             style: { display: 'flex', alignItems: 'center' },
                                             children: [
                                                 ...(reactiveSvgs.length ? reactiveSvgs.map((src, i) => ReactionBadge(src, i)) : []),
-                                                { type: 'div', props: { style: { marginLeft: 8, fontSize: 20, color: palette.subtext }, children: `${reactions.toLocaleString()} reactions` } }
+                                                {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: { marginLeft: 8, fontSize: 20, color: palette.subtext },
+                                                        children: `${reactions.toLocaleString()} reactions`
+                                                    }
+                                                }
                                             ]
                                         }
                                     },
-                                    { type: 'div', props: { style: { fontSize: 20, color: palette.subtext }, children: `${comments.toLocaleString()} comments` } }
+                                    {
+                                        type: 'div',
+                                        props: {
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 12,
+                                                fontSize: 20,
+                                                color: palette.subtext,
+                                                whiteSpace: 'nowrap'
+                                            },
+                                            children: [
+                                                `${comments.toLocaleString()} comments`,
+                                                {
+                                                    type: 'span',
+                                                    props: {
+                                                        style: { opacity: 0.6 },
+                                                        children: '•'
+                                                    }
+                                                },
+                                                `${reposts.toLocaleString()} reposts`
+                                            ]
+                                        }
+                                    }
                                 ]
                             }
                         },

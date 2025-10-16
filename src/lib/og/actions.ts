@@ -10,7 +10,6 @@ export function ActionsBar(color: string) {
                 ActionButton(IconLike(), 'Like', color),
                 ActionButton(IconComment(), 'Comment', color),
                 ActionButton(IconRepost(), 'Repost', color),
-                ActionButton(IconShare(), 'Share', color),
                 ActionButton(IconSend(), 'Send', color),
             ]
         }

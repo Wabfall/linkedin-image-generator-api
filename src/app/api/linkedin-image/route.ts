@@ -18,6 +18,7 @@ type Payload = {
     textMarkdown: string
     reactions?: number
     comments?: number
+    reposts?: number // 🆕
     theme?: {
         background?: string
         card?: string
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
             textMarkdown,
             reactions = 0,
             comments = 0,
+            reposts = 0, // 🆕
             theme = {},
             size = { width: 1200, height: 1350 },
         } = body || {}
@@ -89,8 +91,10 @@ export async function POST(req: NextRequest) {
         const satoriInput = buildSatoriInput({
             W, H, profileDataUrl,
             firstName, lastName, headline, timeAgo,
-            textMarkdown, reactions, comments, palette
+            textMarkdown, reactions, comments, reposts,
+            palette
         }) as unknown as ReactNode
+
 
         const options: SatoriOptions = { width: W, height: H, fonts }
         const svg = await satori(satoriInput, options)
