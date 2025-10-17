@@ -82,20 +82,20 @@ export function buildSatoriInput(input: PostInput) {
                                         props: {
                                             style: { marginLeft: 14, display: 'flex', flexDirection: 'column' },
                                             children: [
-                                                { type: 'div', props: { style: { fontSize: 28, fontWeight: 700, color: palette.text }, children: `${firstName} ${lastName}` } },
-                                                { type: 'div', props: { style: { fontSize: 22, color: palette.subtext, marginTop: 2 }, children: headline } },
+                                                { type: 'div', props: { style: { fontSize: 20, fontWeight: 500, color: palette.text }, children: `${firstName} ${lastName}` } },
+                                                { type: 'div', props: { style: { fontSize: 14, color: palette.subtext, marginTop: 1 }, children: headline } },
 
                                                 // Time + bullet + globe
                                                 {
                                                     type: 'div',
                                                     props: {
                                                         style: {
-                                                            marginTop: 2,
+                                                            marginTop: 1,
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: 8,
                                                             color: palette.subtext,
-                                                            fontSize: 18,
+                                                            fontSize: 14,
                                                             lineHeight: 1,
                                                             whiteSpace: 'nowrap'
                                                         },

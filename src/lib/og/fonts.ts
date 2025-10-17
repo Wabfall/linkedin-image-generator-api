@@ -5,12 +5,14 @@ import type { SatoriOptions } from 'satori'
 
 let interRegular: ArrayBuffer | null = null
 let interBold: ArrayBuffer | null = null
+let interSemibold: ArrayBuffer | null = null
 
 export function ensureFontsLocalOnly() {
     if (interRegular && interBold) return
     const base = path.join(process.cwd(), 'public', 'fonts')
     const reg = path.join(base, 'Inter-Regular.ttf')
     const bold = path.join(base, 'Inter-Bold.ttf')
+    const semibold = path.join(base, 'Inter-Semibold.ttf')
 
     const miss: string[] = []
     try {
@@ -23,7 +25,12 @@ export function ensureFontsLocalOnly() {
         else miss.push('Inter-Bold.ttf')
     } catch { miss.push('Inter-Bold.ttf') }
 
-    if (!interRegular && !interBold) {
+    try {
+        if (fs.existsSync(semibold)) interSemibold = fs.readFileSync(semibold).buffer
+        else miss.push('Inter-Variable.ttf')
+    } catch { miss.push('Inter-Variable.ttf') }
+
+    if (!interRegular && !interBold && !interSemibold) {
         const hint = `Place Inter-Regular.ttf and Inter-Bold.ttf in ${path.relative(process.cwd(), base)}`
         throw new Error(`Fonts not found: ${miss.join(', ')}. ${hint}`)
     }
@@ -33,5 +40,6 @@ export function getSatoriFonts(): SatoriOptions['fonts'] {
     const fonts: SatoriOptions['fonts'] = []
     if (interRegular) fonts.push({ name: 'Inter', data: interRegular, weight: 400, style: 'normal' })
     if (interBold) fonts.push({ name: 'Inter', data: interBold, weight: 700, style: 'normal' })
+    if (interSemibold) fonts.push({ name: 'Inter', data: interSemibold, weight: 500, style: 'normal' })
     return fonts
 }

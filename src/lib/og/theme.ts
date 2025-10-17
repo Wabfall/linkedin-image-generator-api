@@ -15,8 +15,8 @@ export function buildPalette(theme?: Partial<Palette>): Palette {
     return {
         background: theme?.background ?? '#EEF2F5',
         card: theme?.card ?? '#FFFFFF',
-        text: theme?.text ?? '#111111',
-        subtext: theme?.subtext ?? '#5E6A75',
+        text: theme?.text ?? '#000000e6', // nom & prénom
+        subtext: theme?.subtext ?? '#00000099', // titre, heure, planète
         divider: theme?.divider ?? '#E5E7EB',
     }
 }

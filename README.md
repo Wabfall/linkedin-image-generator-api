@@ -58,8 +58,10 @@ npm run dev
 L’API sera disponible sur :
 👉 [http://localhost:3000/api/linkedin-image](http://localhost:3000/api/linkedin-image)
 
-🧪 Tester l’API
-✅ Vérifier le healthcheck
+## 4. 🧪 Tester l’API
+
+### ✅ Vérifier le healthcheck
+
 curl [http://localhost:3000/api/linkedin-image](http://localhost:3000/api/linkedin-image)
 
 Réponse attendue :
@@ -68,7 +70,7 @@ Réponse attendue :
 {"ok":true,"message":"POST an object to get a PNG back."}
 ```
 
-🖼️ Générer un post LinkedIn (exemple)
+### 🖼️ Générer un post LinkedIn (exemple)
 
 ```bash
 curl -sS -X POST http://localhost:3000/api/linkedin-image \
@@ -89,7 +91,7 @@ curl -sS -X POST http://localhost:3000/api/linkedin-image \
 🔹 Cette commande génère un fichier linkedin-post.png dans le dossier courant.
 🔹 Ne pas utiliser -i avec --output, sinon les en-têtes HTTP seront écrits dans le fichier.
 
-🖼️ Exemple 2 – Avec photo de profil distante
+### 🖼️ Exemple 2 – Avec photo de profil distante
 
 ```bash
 curl -sS -X POST http://localhost:3000/api/linkedin-image \
@@ -107,7 +109,7 @@ curl -sS -X POST http://localhost:3000/api/linkedin-image \
   --output linkedin-post-photo.png
 ```
 
-🧩 Exemple 3 – Avatar via SVG inline
+### 🧩 Exemple 3 – Avatar via SVG inline
 
 ```bash
 curl -sS -X POST http://localhost:3000/api/linkedin-image \
@@ -122,7 +124,7 @@ curl -sS -X POST http://localhost:3000/api/linkedin-image \
   --output linkedin-post-svg.png
 ```
 
-🧩 Exemple 4 – Avatar depuis un fichier public
+### 🧩 Exemple 4 – Avatar depuis un fichier public
 
 ```bash
 curl -sS -X POST http://localhost:3000/api/linkedin-image \
@@ -137,7 +139,8 @@ curl -sS -X POST http://localhost:3000/api/linkedin-image \
   --output linkedin-post-public.png
 ```
 
-🧩 Paramètres de l’API
+### 🧩 Paramètres de l’API
+
 Champ	Type	Obligatoire	Description
 firstName	string	✅	Prénom de l’auteur
 lastName	string	✅	Nom de l’auteur
@@ -152,19 +155,21 @@ size	object	❌	Largeur/hauteur personnalisées
 
 Exemple :
 
-{
-  "theme": {
-    "background": "#F3F2EF",
-    "card": "#FFFFFF",
-    "text": "#1D2226"
-  },
-  "size": {
-    "width": 1080,
-    "height": 1350
-  }
-}
+```bash
+    {
+    "theme": {
+        "background": "#F3F2EF",
+        "card": "#FFFFFF",
+        "text": "#1D2226"
+    },
+    "size": {
+        "width": 1080,
+        "height": 1350
+    }
+    }
+```
 
-🧠 Notes techniques
+## 🧠 Notes techniques
 
 L’API utilise Satori pour générer du SVG en mémoire.
 
