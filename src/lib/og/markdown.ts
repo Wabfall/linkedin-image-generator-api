@@ -28,7 +28,7 @@ export function paragraphsWithWrap(paragraphs: string[], color: string): any[] {
             children: [{
                 type: 'div',
                 props: {
-                    style: { fontSize: 42, lineHeight: 1.35, color, whiteSpace: 'pre-wrap', display: 'flex' },
+                    style: { fontSize: 18, lineHeight: 1.42857, color, whiteSpace: 'pre-wrap', display: 'flex' },
                     children: {
                         type: 'span',
                         props: {

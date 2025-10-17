@@ -1,4 +1,3 @@
-// src/lib/og/post.ts
 import type { Palette } from './theme'
 import { paragraphsWithWrap } from './markdown'
 import { IconGlobe } from './icons'
@@ -27,6 +26,8 @@ export function buildSatoriInput(input: PostInput) {
         textMarkdown, reactions, comments, reposts, palette
     } = input
 
+    const NAME_NUDGE_Y = -4 // alignement du nom avec la photo
+
     const bodyNodes = paragraphsWithWrap(
         textMarkdown.replace(/\r\n/g, '\n').split(/\n\n+/).map(s => s.trim()).filter(Boolean),
         palette.text
@@ -38,9 +39,13 @@ export function buildSatoriInput(input: PostInput) {
         type: 'div',
         props: {
             style: {
-                width: W, height: H, backgroundColor: palette.background,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial'
+                width: W,
+                height: H,
+                backgroundColor: palette.background,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
             },
             children: {
                 type: 'div',
@@ -51,7 +56,8 @@ export function buildSatoriInput(input: PostInput) {
                         borderRadius: 16,
                         boxShadow: '0 8px 28px rgba(0,0,0,0.06)',
                         padding: 28,
-                        display: 'flex', flexDirection: 'column',
+                        display: 'flex',
+                        flexDirection: 'column',
                     },
                     children: [
                         // Header
@@ -60,57 +66,106 @@ export function buildSatoriInput(input: PostInput) {
                             props: {
                                 style: { display: 'flex', alignItems: 'center' },
                                 children: [
-                                    profileDataUrl ? {
-                                        type: 'img',
-                                        props: {
-                                            src: profileDataUrl, width: 64, height: 64,
-                                            style: { borderRadius: 32, objectFit: 'cover', border: '1px solid #E5E7EB' }
-                                        }
-                                    } : {
-                                        type: 'div',
-                                        props: {
-                                            style: {
-                                                width: 64, height: 64, borderRadius: 32, backgroundColor: '#D1D5DB',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: '#374151', fontWeight: 700
+                                    profileDataUrl
+                                        ? {
+                                            type: 'img',
+                                            props: {
+                                                src: profileDataUrl,
+                                                width: 64,
+                                                height: 64,
+                                                style: {
+                                                    borderRadius: 32,
+                                                    objectFit: 'cover',
+                                                    border: '1px solid #E5E7EB',
+                                                },
                                             },
-                                            children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()
                                         }
-                                    },
+                                        : {
+                                            type: 'div',
+                                            props: {
+                                                style: {
+                                                    width: 64,
+                                                    height: 64,
+                                                    borderRadius: 32,
+                                                    backgroundColor: '#D1D5DB',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#374151',
+                                                    fontWeight: 700,
+                                                },
+                                                children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase(),
+                                            },
+                                        },
                                     {
                                         type: 'div',
                                         props: {
-                                            style: { marginLeft: 14, display: 'flex', flexDirection: 'column' },
+                                            style: {
+                                                marginLeft: 14,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                marginTop: NAME_NUDGE_Y,
+                                            },
                                             children: [
-                                                { type: 'div', props: { style: { fontSize: 20, fontWeight: 500, color: palette.text }, children: `${firstName} ${lastName}` } },
-                                                { type: 'div', props: { style: { fontSize: 14, color: palette.subtext, marginTop: 1 }, children: headline } },
-
-                                                // Time + bullet + globe
                                                 {
                                                     type: 'div',
                                                     props: {
                                                         style: {
-                                                            marginTop: 1,
+                                                            fontSize: 20,
+                                                            fontWeight: 500,
+                                                            color: palette.text,
+                                                            lineHeight: 1.2,
+                                                        },
+                                                        children: `${firstName} ${lastName}`,
+                                                    },
+                                                },
+                                                {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: {
+                                                            fontSize: 14,
+                                                            color: palette.subtext,
+                                                            marginTop: 0,
+                                                        },
+                                                        children: headline,
+                                                    },
+                                                },
+                                                {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: {
+                                                            marginTop: 2,
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: 8,
                                                             color: palette.subtext,
                                                             fontSize: 14,
                                                             lineHeight: 1,
-                                                            whiteSpace: 'nowrap'
+                                                            whiteSpace: 'nowrap',
                                                         },
                                                         children: [
-                                                            { type: 'span', props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') } },
+                                                            {
+                                                                type: 'span',
+                                                                props: {
+                                                                    children: (timeAgo || '').replace(/^\s*•\s*/, ''),
+                                                                },
+                                                            },
                                                             { type: 'span', props: { children: '•' } },
-                                                            IconGlobe(),
-                                                        ]
-                                                    }
+                                                            {
+                                                                type: 'div',
+                                                                props: {
+                                                                    style: { marginLeft: -2, display: 'flex' }, // ✅ fix Satori + léger décalage
+                                                                    children: IconGlobe(),
+                                                                },
+                                                            },
+                                                        ],
+                                                    },
                                                 },
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
+                                            ],
+                                        },
+                                    },
+                                ],
+                            },
                         },
 
                         // Spacer
@@ -120,9 +175,15 @@ export function buildSatoriInput(input: PostInput) {
                         {
                             type: 'div',
                             props: {
-                                style: { display: 'flex', flexDirection: 'column' },
+                                style: {
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    fontSize: 20,
+                                    lineHeight: 1,
+                                    color: palette.text,
+                                },
                                 children: bodyNodes,
-                            }
+                            },
                         },
 
                         // Divider
@@ -133,23 +194,33 @@ export function buildSatoriInput(input: PostInput) {
                         {
                             type: 'div',
                             props: {
-                                style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                },
                                 children: [
                                     {
                                         type: 'div',
                                         props: {
                                             style: { display: 'flex', alignItems: 'center' },
                                             children: [
-                                                ...(reactiveSvgs.length ? reactiveSvgs.map((src, i) => ReactionBadge(src, i)) : []),
+                                                ...(reactiveSvgs.length
+                                                    ? reactiveSvgs.map((src, i) => ReactionBadge(src, i))
+                                                    : []),
                                                 {
                                                     type: 'div',
                                                     props: {
-                                                        style: { marginLeft: 8, fontSize: 20, color: palette.subtext },
-                                                        children: `${reactions.toLocaleString()} reactions`
-                                                    }
-                                                }
-                                            ]
-                                        }
+                                                        style: {
+                                                            marginLeft: 8,
+                                                            fontSize: 20,
+                                                            color: palette.subtext,
+                                                        },
+                                                        children: `${reactions.toLocaleString()} reactions`,
+                                                    },
+                                                },
+                                            ],
+                                        },
                                     },
                                     {
                                         type: 'div',
@@ -160,17 +231,20 @@ export function buildSatoriInput(input: PostInput) {
                                                 gap: 12,
                                                 fontSize: 20,
                                                 color: palette.subtext,
-                                                whiteSpace: 'nowrap'
+                                                whiteSpace: 'nowrap',
                                             },
                                             children: [
                                                 `${comments.toLocaleString()} comments`,
-                                                { type: 'span', props: { style: { opacity: 0.6 }, children: '•' } },
-                                                `${reposts.toLocaleString()} reposts`
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
+                                                {
+                                                    type: 'span',
+                                                    props: { style: { opacity: 0.6 }, children: '•' },
+                                                },
+                                                `${reposts.toLocaleString()} reposts`,
+                                            ],
+                                        },
+                                    },
+                                ],
+                            },
                         },
 
                         // Divider between reactions and action buttons
@@ -180,9 +254,9 @@ export function buildSatoriInput(input: PostInput) {
 
                         // Action buttons
                         ActionsBar(palette.subtext),
-                    ]
-                }
-            }
-        }
+                    ],
+                },
+            },
+        },
     } as any
 }
