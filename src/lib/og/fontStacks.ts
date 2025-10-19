@@ -29,10 +29,10 @@ export function getLocalFontStack(style: PlatformStyle): string {
 
     // Fallbacks étendus (pour les glyphes/emoji)
     if (hasFamily('Roboto') && primary !== 'Roboto') stack.push('Roboto')
+    if (hasFamily('Noto Color Emoji') && primary == "Roboto") stack.push('"Noto Color Emoji"')
     if (hasFamily('Segoe UI') && primary !== 'Segoe UI') stack.push('"Segoe UI"')
+    if (hasFamily('Segoe UI Emoji') && primary == 'Segoe UI') stack.push('Segoe UI Emoji')
     if (hasFamily('SF Pro Text') && primary !== 'SF Pro Text') stack.push('"SF Pro Text"')
-    if (hasFamily('Noto Emoji')) stack.push('"Noto Emoji"')
-    if (hasFamily('Noto Sans Symbols 2')) stack.push('"Noto Sans Symbols 2"')
 
     // Sécurité finale : Inter toujours présent
     if (!stack.includes('Inter')) stack.push('Inter')

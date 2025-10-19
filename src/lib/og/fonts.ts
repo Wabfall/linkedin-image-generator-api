@@ -26,7 +26,7 @@ function readFromFamilyDir(
                 return toAB(fs.readFileSync(p))
             }
         } catch {
-            // on ignore et on continue
+            // ignore and continue
         }
     }
     return null
@@ -63,7 +63,7 @@ export function ensureFontsLocalOnly() {
     addVariantIfFound(out, 'Segoe UI',
         readFromFamilyDir(base, 'Segoe UI', ['SegoeUI-Bold.ttf', 'Bold.ttf']), 700)
 
-    // --- mac / iOS-like : SF Pro Text (licence Apple requise)
+    // --- mac / iOS-like : SF Pro Text
     addVariantIfFound(out, 'SF Pro Text',
         readFromFamilyDir(base, 'SF Pro Text', ['SFProText-Regular.otf', 'SFProText-Regular.ttf', 'Regular.otf', 'Regular.ttf']), 400)
     addVariantIfFound(out, 'SF Pro Text',
@@ -75,7 +75,7 @@ export function ensureFontsLocalOnly() {
     addVariantIfFound(out, 'Roboto',
         readFromFamilyDir(base, 'Roboto', ['Roboto-Regular.ttf', 'Regular.ttf']), 400)
     addVariantIfFound(out, 'Roboto',
-        readFromFamilyDir(base, 'Roboto', ['Roboto-SemiBold.ttf', 'SemiBold.ttf', '500.ttf']), 600)
+        readFromFamilyDir(base, 'Roboto', ['Roboto-Medium.ttf', 'Medium.ttf', '500.ttf']), 500)
     addVariantIfFound(out, 'Roboto',
         readFromFamilyDir(base, 'Roboto', ['Roboto-Bold.ttf', 'Bold.ttf']), 700)
 
@@ -87,11 +87,13 @@ export function ensureFontsLocalOnly() {
     addVariantIfFound(out, 'Inter',
         readFromFamilyDir(base, 'Inter', ['Inter-Bold.ttf', 'Bold.ttf']), 700)
 
-    // --- Couverture glyphes (emoji mono & symboles)
-    addVariantIfFound(out, 'Noto Emoji',
+    // --- Emoji sets
+    addVariantIfFound(out, 'Noto',
         readFromFamilyDir(base, 'Noto', ['NotoEmoji-Regular.ttf', 'NotoColorEmoji.ttf']), 400)
-    addVariantIfFound(out, 'Noto Sans Symbols 2',
-        readFromFamilyDir(base, 'Noto', ['NotoSansSymbols2-Regular.ttf', 'Regular.ttf']), 400)
+
+    // Symboles étendus
+    addVariantIfFound(out, 'Noto',
+        readFromFamilyDir(base, 'Noto Sans Symbols 2', ['NotoSansSymbols2-Regular.ttf', 'Regular.ttf']), 400)
 
     // Au moins une famille nécessaire
     if (Object.keys(out).length === 0) {
@@ -103,7 +105,6 @@ Expected structure: <fonts>/<Family>/<File.ttf>. Place at least Inter/Inter-Regu
 
     loaded = out
 
-    // Log utile
     const summary = Object.entries(loaded)
         .map(([fam, arr]) => `${fam} [${arr.map(a => a.weight).sort().join(', ')}]`)
         .join(' | ')
@@ -129,6 +130,5 @@ export function getSatoriFonts(): SatoriOptions['fonts'] {
 
 /** Indique si une famille est dispo localement. */
 export function hasFamily(name: string): boolean {
-    console.log("hasFamily" + name);
     return Boolean(loaded && loaded[name])
 }
