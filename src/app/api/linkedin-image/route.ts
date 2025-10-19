@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
             lineHeight: 1.42857,
             maxWidthInner: Math.min(920, W - 160),
             paragraphSpacing: 16,
-            safetyMultiplier: 1.35,
+            safetyMultiplier: 1,
         })
 
         // Hauteur finale (pilotée par l’estimateur)
