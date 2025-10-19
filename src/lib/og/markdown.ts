@@ -82,29 +82,26 @@ function fileToDataUrl(absPath: string, mime = 'image/svg+xml'): string | null {
     }
 }
 
-/** Renvoie une data URL locale pour l’emoji selon platformStyle ; fallback Twemoji puis Noto. */
 function emojiDataUrlLocal(emoji: string, platformStyle: PlatformStyle): string | null {
     const base = path.join(process.cwd(), 'public', 'emoji')
     const hex = emojiToHexSequence(emoji)
     const notoName = emojiToNotoFilename(emoji)
 
-    // Ordre de préférence par plateforme
     const candidates =
         platformStyle === 'android'
-            ? [
-                path.join(base, 'noto', notoName),
-                path.join(base, 'twemoji', `${hex}.svg`),
-            ]
-            : [
-                path.join(base, 'twemoji', `${hex}.svg`),
-                path.join(base, 'noto', notoName),
-            ]
+            ? [path.join(base, 'noto', notoName), path.join(base, 'twemoji', `${hex}.svg`)]
+            : [path.join(base, 'twemoji', `${hex}.svg`), path.join(base, 'noto', notoName)]
 
     for (const abs of candidates) {
         const d = fileToDataUrl(abs, 'image/svg+xml')
         if (d) return d
     }
     return null
+}
+
+// --- helper pour forcer un saut de ligne dans un flex ---
+function makeLineBreak(key: string) {
+    return { type: 'div', key, props: { style: { display: 'block', width: '100%', height: 0 } } }
 }
 
 // --- Options de rendu pour les paragraphes
@@ -122,18 +119,14 @@ export type ParagraphRenderOptions = {
 }
 
 /**
- * Rend une liste de paragraphes (texte brut avec mini-markdown inline)
- * - Police par défaut: 'inherit' (hérite de la font du conteneur via platformStyle)
- * - Émojis locaux en data URL (twemoji/noto) → zéro I/O au rendu
+ * Rend les paragraphes avec support de **\n** comme retour à la ligne
  */
 export function paragraphsWithWrap(
     paragraphs: string[],
     colorOrOpts?: string | ParagraphRenderOptions
 ): any[] {
     const opts: ParagraphRenderOptions =
-        typeof colorOrOpts === 'string'
-            ? { color: colorOrOpts }
-            : (colorOrOpts || {})
+        typeof colorOrOpts === 'string' ? { color: colorOrOpts } : (colorOrOpts || {})
 
     const {
         color = '#111',
@@ -156,60 +149,68 @@ export function paragraphsWithWrap(
                 for (let k = 0; k < runs.length; k++) {
                     const r = runs[k]
                     if (r.type === 'text') {
-                        inlineChildren.push(r.value)
+                        const parts = r.value.split(/\n/)
+                        parts.forEach((part, i) => {
+                            if (part) {
+                                inlineChildren.push({
+                                    type: 'span',
+                                    key: `t-${idx}-${inlineChildren.length}`,
+                                    props: {
+                                        style: {
+                                            whiteSpace: 'pre-wrap',
+                                            wordBreak: 'break-word',
+                                            overflowWrap: 'anywhere',
+                                        },
+                                        children: part,
+                                    },
+                                })
+                            }
+                            if (i < parts.length - 1) {
+                                inlineChildren.push(makeLineBreak(`br-${idx}-${inlineChildren.length}`))
+                            }
+                        })
                     } else {
                         const srcDataUrl = emojiDataUrlLocal(r.value, platformStyle)
-                        if (srcDataUrl) {
-                            inlineChildren.push({
-                                type: 'img',
-                                key: `e-${idx}-${inlineChildren.length}`,
-                                props: {
-                                    src: srcDataUrl,
-                                    width: emojiSizePx,
-                                    height: emojiSizePx,
-                                    style: {
-                                        display: 'block', // ✅ Satori-friendly
-                                        verticalAlign: `${emojiVAlign}px`,
-                                    },
-                                },
-                            })
-                        } else {
-                            // Fallback ultime : on garde le caractère si aucun asset local trouvé
-                            inlineChildren.push(r.value)
-                        }
+                        inlineChildren.push({
+                            type: 'img',
+                            key: `e-${idx}-${inlineChildren.length}`,
+                            props: {
+                                src: srcDataUrl || '',
+                                width: emojiSizePx,
+                                height: emojiSizePx,
+                                style: { verticalAlign: `${emojiVAlign}px` },
+                            },
+                        })
                     }
                 }
                 continue
             }
 
-            if (node.type === 'b') {
-                inlineChildren.push({
-                    type: 'b',
-                    key: `b-${idx}-${inlineChildren.length}`,
-                    props: { style: { fontWeight: 700 }, children: node.children },
+            // gestion du markdown
+            if (node.type === 'b' || node.type === 'i' || node.type === 'a') {
+                const childrenText =
+                    node.type === 'a'
+                        ? `${node.children} (${node.href})`
+                        : String(node.children ?? '')
+                const parts = childrenText.split(/\n/)
+                const childNodes: any[] = []
+                parts.forEach((part, i) => {
+                    if (part) childNodes.push(part)
+                    if (i < parts.length - 1) childNodes.push(makeLineBreak(`br-m-${idx}-${i}`))
                 })
-                continue
-            }
-
-            if (node.type === 'i') {
                 inlineChildren.push({
-                    type: 'i',
-                    key: `i-${idx}-${inlineChildren.length}`,
-                    props: { style: { fontStyle: 'italic' }, children: node.children },
-                })
-                continue
-            }
-
-            if (node.type === 'a') {
-                inlineChildren.push({
-                    type: 'span',
-                    key: `a-${idx}-${inlineChildren.length}`,
+                    type: node.type === 'a' ? 'span' : node.type,
+                    key: `${node.type}-${idx}-${inlineChildren.length}`,
                     props: {
-                        style: { textDecoration: 'underline' },
-                        children: `${node.children} (${node.href})`,
+                        style:
+                            node.type === 'b'
+                                ? { fontWeight: 700 }
+                                : node.type === 'i'
+                                    ? { fontStyle: 'italic' }
+                                    : { textDecoration: 'underline' },
+                        children: childNodes,
                     },
                 })
-                continue
             }
         }
 
@@ -227,17 +228,16 @@ export function paragraphsWithWrap(
                     props: {
                         style: {
                             display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'baseline',
                             color,
                             fontFamily,
                             fontSize,
                             lineHeight,
-                            whiteSpace: 'pre-wrap',
+                            width: '100%',
                             ...(maxWidth ? { maxWidth } : {}),
                         },
-                        children: {
-                            type: 'span',
-                            props: { children: inlineChildren as any },
-                        },
+                        children: inlineChildren as any,
                     },
                 },
             },
