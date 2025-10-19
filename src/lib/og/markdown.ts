@@ -5,15 +5,18 @@ import path from 'path'
 // --- Inline Markdown parsing: **bold**, *italic*, [text](url)
 export function parseInlineMarkdown(input: string) {
     const nodes: any[] = []
-    const regex = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(\[([^\]]+)\]\(([^)]+)\))/g
+    const regex = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(\[([^\]]+)\]\(([^)]+)\))|(#[\p{L}\p{N}_]+)/gu
     let lastIndex = 0
     let m: RegExpExecArray | null
 
     while ((m = regex.exec(input)) !== null) {
         if (m.index > lastIndex) nodes.push(input.slice(lastIndex, m.index))
-        if (m[1]) nodes.push({ type: 'b', children: m[2] })
-        else if (m[3]) nodes.push({ type: 'i', children: m[4] })
-        else if (m[5]) nodes.push({ type: 'a', href: m[7], children: m[6] })
+
+        if (m[1]) nodes.push({ type: 'b', children: m[2] }) // **bold**
+        else if (m[3]) nodes.push({ type: 'i', children: m[4] }) // *italic*
+        else if (m[5]) nodes.push({ type: 'a', href: m[7], children: m[6] }) // [text](url)
+        else if (m[8]) nodes.push({ type: 'hashtag', children: m[8] }) // #hashtag
+
         lastIndex = regex.lastIndex
     }
     if (lastIndex < input.length) nodes.push(input.slice(lastIndex))
@@ -119,7 +122,7 @@ export type ParagraphRenderOptions = {
 }
 
 /**
- * Rend les paragraphes avec support de **\n** comme retour à la ligne
+ * Rend les paragraphes avec support de **\n**, #hashtags, liens [text](url)
  */
 export function paragraphsWithWrap(
     paragraphs: string[],
@@ -132,7 +135,7 @@ export function paragraphsWithWrap(
         color = '#111',
         fontFamily = 'inherit',
         fontSize = 20,
-        lineHeight = 1.3,
+        lineHeight = 1.4,
         paragraphSpacing = 16,
         maxWidth,
         platformStyle = 'windows',
@@ -142,16 +145,18 @@ export function paragraphsWithWrap(
 
     return paragraphs.map((p, idx) => {
         const inlineChildren: any[] = []
+        const linkedInBlue = '#0a66c2'
 
         for (const node of parseInlineMarkdown(p)) {
             if (typeof node === 'string') {
+                // gestion des sauts de ligne
                 const runs = splitTextIntoEmojiRuns(node)
                 for (let k = 0; k < runs.length; k++) {
                     const r = runs[k]
                     if (r.type === 'text') {
                         const parts = r.value.split(/\n/)
                         parts.forEach((part, i) => {
-                            if (part) {
+                            if (part)
                                 inlineChildren.push({
                                     type: 'span',
                                     key: `t-${idx}-${inlineChildren.length}`,
@@ -164,10 +169,8 @@ export function paragraphsWithWrap(
                                         children: part,
                                     },
                                 })
-                            }
-                            if (i < parts.length - 1) {
+                            if (i < parts.length - 1)
                                 inlineChildren.push(makeLineBreak(`br-${idx}-${inlineChildren.length}`))
-                            }
                         })
                     } else {
                         const srcDataUrl = emojiDataUrlLocal(r.value, platformStyle)
@@ -186,31 +189,49 @@ export function paragraphsWithWrap(
                 continue
             }
 
-            // gestion du markdown
-            if (node.type === 'b' || node.type === 'i' || node.type === 'a') {
-                const childrenText =
-                    node.type === 'a'
-                        ? `${node.children} (${node.href})`
-                        : String(node.children ?? '')
-                const parts = childrenText.split(/\n/)
-                const childNodes: any[] = []
-                parts.forEach((part, i) => {
-                    if (part) childNodes.push(part)
-                    if (i < parts.length - 1) childNodes.push(makeLineBreak(`br-m-${idx}-${i}`))
-                })
+            // --- Markdown stylisé ---
+            const baseStyle = { wordBreak: 'break-word', overflowWrap: 'anywhere' }
+
+            if (node.type === 'b') {
                 inlineChildren.push({
-                    type: node.type === 'a' ? 'span' : node.type,
-                    key: `${node.type}-${idx}-${inlineChildren.length}`,
+                    type: 'b',
+                    key: `b-${idx}-${inlineChildren.length}`,
+                    props: { style: { ...baseStyle, fontWeight: 700 }, children: node.children },
+                })
+                continue
+            }
+
+            if (node.type === 'i') {
+                inlineChildren.push({
+                    type: 'i',
+                    key: `i-${idx}-${inlineChildren.length}`,
+                    props: { style: { ...baseStyle, fontStyle: 'italic' }, children: node.children },
+                })
+                continue
+            }
+
+            if (node.type === 'a') {
+                inlineChildren.push({
+                    type: 'span',
+                    key: `a-${idx}-${inlineChildren.length}`,
                     props: {
-                        style:
-                            node.type === 'b'
-                                ? { fontWeight: 700 }
-                                : node.type === 'i'
-                                    ? { fontStyle: 'italic' }
-                                    : { textDecoration: 'underline' },
-                        children: childNodes,
+                        style: { ...baseStyle, color: linkedInBlue, fontWeight: 600 },
+                        children: `${node.children}`,
                     },
                 })
+                continue
+            }
+
+            if (node.type === 'hashtag') {
+                inlineChildren.push({
+                    type: 'span',
+                    key: `h-${idx}-${inlineChildren.length}`,
+                    props: {
+                        style: { ...baseStyle, color: linkedInBlue, fontWeight: 700 },
+                        children: node.children,
+                    },
+                })
+                continue
             }
         }
 
