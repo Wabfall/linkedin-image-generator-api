@@ -2,21 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import satori, { type SatoriOptions } from 'satori'
 import type { ReactNode } from 'react'
-import { ensureFontsLocalOnly, getSatoriFonts } from '@/lib/og/fonts'
 import { buildPalette, clamp } from '@/lib/og/theme'
 import { buildSatoriInput } from '@/lib/og/post'
-import { publicSvgToDataUrl } from '@/lib/og/reactions' // on réutilise l’utilitaire
+import { publicSvgToDataUrl } from '@/lib/og/reactions'
+import { ensureFontsLocalOnly, getSatoriFonts, hasFamily } from '@/lib/og/fonts'
+import { primaryFamilyFor } from '@/lib/og/fontStacks'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type Payload = {
     profileImageUrl?: string
-    /** code SVG inline (string) */
     profileSvgMarkup?: string
-    /** chemin public vers un svg (ex: "icons/avatar-default.svg") */
     profileSvgPublicPath?: string
-
     firstName: string
     lastName: string
     headline?: string
@@ -33,8 +31,12 @@ type Payload = {
         divider?: string
     }
     size?: { width: number; height: number }
+
+    /** Rend le style selon la plateforme : windows | mac | ios | android */
+    platformStyle?: 'windows' | 'mac' | 'ios' | 'android'
 }
 
+// --- helpers ---
 async function imageToDataUrl(url: string): Promise<string | null> {
     try {
         const r = await fetch(url)
@@ -47,12 +49,10 @@ async function imageToDataUrl(url: string): Promise<string | null> {
     }
 }
 
-/** Transforme un markup SVG inline en data URL */
 function svgMarkupToDataUrl(markup: string): string {
     return `data:image/svg+xml;utf8,${encodeURIComponent(markup)}`
 }
 
-/** Choisit la meilleure source d’avatar et renvoie une data URL */
 async function resolveProfileDataUrl(input: {
     profileImageUrl?: string
     profileSvgMarkup?: string
@@ -60,39 +60,36 @@ async function resolveProfileDataUrl(input: {
 }) {
     const { profileImageUrl, profileSvgMarkup, profileSvgPublicPath } = input
 
-    // 1) URL distante (png/jpg/webp/svg…)
     if (profileImageUrl) {
         const d = await imageToDataUrl(profileImageUrl)
         if (d) return d
     }
-
-    // 2) SVG inline (string)
     if (profileSvgMarkup && profileSvgMarkup.trim()) {
         return svgMarkupToDataUrl(profileSvgMarkup)
     }
-
-    // 3) Fichier public
     if (profileSvgPublicPath) {
         const d = publicSvgToDataUrl(profileSvgPublicPath)
         if (d) return d
     }
-
-    // 4) Fallback → avatar par défaut
     return publicSvgToDataUrl('icons/avatar-default.svg') || null
 }
 
+// --- route handlers ---
 export async function GET() {
     return NextResponse.json({ ok: true, message: 'POST an object to get a PNG back.' })
 }
 
 export async function POST(req: NextRequest) {
     try {
-        const body = (await req.json()) as Payload
+        // lecture propre en UTF-8 (accents/emojis)
+        const bytes = await req.arrayBuffer()
+        const utf8 = new TextDecoder('utf-8').decode(bytes)
+        const body = JSON.parse(utf8) as Payload
+
         const {
             profileImageUrl,
             profileSvgMarkup,
             profileSvgPublicPath,
-
             firstName,
             lastName,
             headline = '',
@@ -103,21 +100,31 @@ export async function POST(req: NextRequest) {
             reposts = 0,
             theme = {},
             size = { width: 1200, height: 1350 },
+            platformStyle = 'windows',
         } = body || {}
 
         if (!firstName || !lastName || !textMarkdown) {
             return NextResponse.json(
                 { error: 'Missing required fields: firstName, lastName, textMarkdown' },
-                { status: 400 }
+                { status: 400 },
             )
         }
 
+        // --- charge les fonts locales ---
         ensureFontsLocalOnly()
         const fonts = getSatoriFonts()
         if (!fonts.length) {
             return NextResponse.json(
-                { error: 'Fonts missing. Put Inter-Regular.ttf and Inter-Bold.ttf in /public/fonts' },
-                { status: 500 }
+                { error: 'Fonts missing. Place Inter-Regular.ttf in /public/fonts' },
+                { status: 500 },
+            )
+        }
+
+        // Alerte si la famille primaire attendue pour la plateforme n'est pas chargée
+        const primary = primaryFamilyFor(platformStyle)
+        if (primary && !hasFamily(primary)) {
+            console.warn(
+                `[fonts] platformStyle=${platformStyle}: primary family "${primary}" not found locally. Falling back to loaded families.`
             )
         }
 
@@ -125,23 +132,33 @@ export async function POST(req: NextRequest) {
         const H = clamp(Number(size.height) || 1350, 800, 2200)
         const palette = buildPalette(theme)
 
-        // ⬇️ Résolution de l’avatar (priorité: URL > markup > publicPath > défaut)
         const profileDataUrl = await resolveProfileDataUrl({
             profileImageUrl,
             profileSvgMarkup,
             profileSvgPublicPath,
         })
 
+        // --- construit le rendu ---
         const satoriInput = buildSatoriInput({
-            W, H, profileDataUrl,
-            firstName, lastName, headline, timeAgo,
-            textMarkdown, reactions, comments, reposts,
-            palette
+            W,
+            H,
+            profileDataUrl,
+            firstName,
+            lastName,
+            headline,
+            timeAgo,
+            textMarkdown,
+            reactions,
+            comments,
+            reposts,
+            palette,
+            platformStyle, // ✅ synchronisé avec PostInput
         }) as unknown as ReactNode
 
         const options: SatoriOptions = { width: W, height: H, fonts }
         const svg = await satori(satoriInput, options)
 
+        // --- conversion SVG → PNG ---
         const { Resvg } = await import('@resvg/resvg-js')
         const resvg = new Resvg(svg as string, { fitTo: { mode: 'width', value: W } })
         const pngData = resvg.render().asPng()
@@ -155,8 +172,8 @@ export async function POST(req: NextRequest) {
     } catch (err: any) {
         console.error('[linkedin-image] ERROR:', err)
         return NextResponse.json(
-            { error: 'Internal error while generating image', detail: (err && err.message) || String(err) },
-            { status: 500 }
+            { error: 'Internal error while generating image', detail: err?.message || String(err) },
+            { status: 500 },
         )
     }
 }

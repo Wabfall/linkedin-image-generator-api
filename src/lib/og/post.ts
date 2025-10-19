@@ -1,8 +1,12 @@
+// src/lib/og/post.ts
 import type { Palette } from './theme'
-import { paragraphsWithWrap } from './markdown'
+import { paragraphsWithWrap, splitParagraphs } from './markdown'
 import { IconGlobe } from './icons'
 import { loadReactiveIcons, ReactionBadge } from './reactions'
 import { ActionsBar } from './actions'
+
+import type { PlatformStyle } from './fontStacks'
+import { getLocalFontStack } from './fontStacks'
 
 export type PostInput = {
     W: number
@@ -17,20 +21,29 @@ export type PostInput = {
     comments: number
     reposts: number
     palette: Palette
+    /** windows | mac | ios | android */
+    platformStyle: PlatformStyle
 }
 
 export function buildSatoriInput(input: PostInput) {
     const {
         W, H, profileDataUrl,
         firstName, lastName, headline, timeAgo,
-        textMarkdown, reactions, comments, reposts, palette
+        textMarkdown, reactions, comments, reposts, palette,
+        platformStyle,
     } = input
 
     const NAME_NUDGE_Y = -4 // alignement du nom avec la photo
+    const fontFamily = getLocalFontStack(platformStyle)
 
     const bodyNodes = paragraphsWithWrap(
-        textMarkdown.replace(/\r\n/g, '\n').split(/\n\n+/).map(s => s.trim()).filter(Boolean),
-        palette.text
+        splitParagraphs(textMarkdown),
+        {
+            color: palette.text,
+            fontFamily,
+            fontSize: 18,
+            lineHeight: 1.42857
+        }
     )
 
     const reactiveSvgs = loadReactiveIcons()
@@ -45,7 +58,7 @@ export function buildSatoriInput(input: PostInput) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
+                fontFamily, // ✅ stack locale dépendante de platformStyle
             },
             children: {
                 type: 'div',
@@ -146,15 +159,13 @@ export function buildSatoriInput(input: PostInput) {
                                                         children: [
                                                             {
                                                                 type: 'span',
-                                                                props: {
-                                                                    children: (timeAgo || '').replace(/^\s*•\s*/, ''),
-                                                                },
+                                                                props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') },
                                                             },
                                                             { type: 'span', props: { children: '•' } },
                                                             {
                                                                 type: 'div',
                                                                 props: {
-                                                                    style: { marginLeft: -2, display: 'flex' }, // ✅ fix Satori + léger décalage
+                                                                    style: { marginLeft: -2, display: 'flex' }, // léger décalage
                                                                     children: IconGlobe(),
                                                                 },
                                                             },
@@ -235,10 +246,7 @@ export function buildSatoriInput(input: PostInput) {
                                             },
                                             children: [
                                                 `${comments.toLocaleString()} comments`,
-                                                {
-                                                    type: 'span',
-                                                    props: { style: { opacity: 0.6 }, children: '•' },
-                                                },
+                                                { type: 'span', props: { style: { opacity: 0.6 }, children: '•' } },
                                                 `${reposts.toLocaleString()} reposts`,
                                             ],
                                         },
