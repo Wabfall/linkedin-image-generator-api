@@ -37,12 +37,14 @@ export function buildSatoriInput(input: PostInput) {
     const fontFamily = getLocalFontStack(platformStyle)
 
     const bodyNodes = paragraphsWithWrap(
-        splitParagraphs(textMarkdown),
+        textMarkdown.replace(/\r\n/g, '\n').split(/\n\n+/).map(s => s.trim()).filter(Boolean),
         {
             color: palette.text,
             fontFamily,
             fontSize: 18,
-            lineHeight: 1.42857
+            lineHeight: 1.42857,
+            maxWidth: Math.min(920, W - 160),
+            // platformStyle si tu le passes ici
         }
     )
 
