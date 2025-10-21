@@ -23,7 +23,7 @@ export type PostInput = {
     palette: Palette
     /** windows | mac | ios | android */
     platformStyle: PlatformStyle
-    previewMode: "more" | "less"
+    typePreview: "more" | "less"
 }
 
 export function buildSatoriInput(input: PostInput) {
@@ -31,7 +31,7 @@ export function buildSatoriInput(input: PostInput) {
         W, H, profileDataUrl,
         firstName, lastName, headline, timeAgo,
         textMarkdown, reactions, comments, reposts, palette,
-        platformStyle, previewMode = 'more',
+        platformStyle, typePreview = 'more',
     } = input
 
     const NAME_NUDGE_Y = -4
@@ -48,6 +48,7 @@ export function buildSatoriInput(input: PostInput) {
             fontSize: 20,
             lineHeight: 1.4,
             maxWidth: CONTENT_W,
+            typePreview: typePreview
         }
     )
 

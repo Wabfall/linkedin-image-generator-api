@@ -115,6 +115,7 @@ export type ParagraphRenderOptions = {
     lineHeight?: number | string
     paragraphSpacing?: number
     maxWidth?: number
+    typePreview: "more" | "less"
 
     platformStyle?: PlatformStyle
     emojiSizePx?: number
@@ -141,15 +142,15 @@ export function paragraphsWithWrap(
         platformStyle = 'windows',
         emojiSizePx = Math.round(fontSize * 1.05),
         emojiVAlign = -2,
+        typePreview = 'more',
     } = opts
 
-    return paragraphs.map((p, idx) => {
+    const allParagraphs = paragraphs.map((p, idx) => {
         const inlineChildren: any[] = []
         const linkedInBlue = '#0a66c2'
 
         for (const node of parseInlineMarkdown(p)) {
             if (typeof node === 'string') {
-                // gestion des sauts de ligne
                 const runs = splitTextIntoEmojiRuns(node)
                 for (let k = 0; k < runs.length; k++) {
                     const r = runs[k]
@@ -189,7 +190,6 @@ export function paragraphsWithWrap(
                 continue
             }
 
-            // --- Markdown stylisé ---
             const baseStyle = { wordBreak: 'break-word', overflowWrap: 'anywhere' }
 
             if (node.type === 'b') {
@@ -264,4 +264,21 @@ export function paragraphsWithWrap(
             },
         }
     })
+
+    // ✅ Ajout du suffixe “ …more” à la fin du dernier paragraphe si typePreview === 'less'
+    if (typePreview === 'less' && allParagraphs.length > 0) {
+        const lastParagraph = allParagraphs[allParagraphs.length - 1]
+        const lastDiv = lastParagraph.props.children
+        if (lastDiv?.props?.children) {
+            const children = lastDiv.props.children
+            const MORE_COLOR = '#00000099'
+            children.push({
+                type: 'span',
+                key: 'suffix-more',
+                props: { style: { color: MORE_COLOR }, children: ' …more' },
+            })
+        }
+    }
+
+    return allParagraphs
 }

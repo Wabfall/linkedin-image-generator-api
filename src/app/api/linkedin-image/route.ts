@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
 
         // texte effectif pour estimation (less = tronqué à ~3 lignes)
         const effectiveTextForEstimate =
-            typePreview === 'less' ? truncateToLines(text, W, 3) + " ... more" : text
+            typePreview === 'less' ? truncateToLines(text, W, 3) : text
 
         const estimatedH = estimateAutoHeight({
             W,
@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
             reposts,
             palette,
             platformStyle,
-            previewMode: typePreview, // 'more' | 'less'
+            typePreview, // 'more' | 'less'
         }) as unknown as ReactNode
         const options: SatoriOptions = { width: W, height: H, fonts }
         const svg = await satori(satoriInput, options)
