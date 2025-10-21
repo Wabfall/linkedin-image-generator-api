@@ -77,20 +77,20 @@ function GalleryTile(src: string, w: number, h: number, overlayText?: string) {
 }
 
 /** Grille façon LinkedIn: 1 (full), 2 (50/50), 3 (1 grande + 2 empilées), 4 (2x2), >4 → 2x2 + overlay "+N" */
-function buildAttachmentsGrid(attachments: string[], contentW: number) {
+function buildAttachmentsGrid(attachments: string[], fullWidth: number) {
     if (!attachments?.length) return null
 
     const GAP = 0
     const visible = Math.min(attachments.length, 4)
     const leftover = Math.max(0, attachments.length - visible)
 
-    // largeur dispo pour vignettes
-    const fullW = contentW
+    const fullW = fullWidth
     const halfW = Math.floor((fullW - GAP) / 2)
-    const tileH = 420         // hauteur visuelle confortable
+    const tileH = 420
     const halfH = Math.floor((tileH - GAP) / 2)
 
     if (visible === 1) {
+        // 1 image → plein bord
         return {
             type: 'div',
             props: {
@@ -105,7 +105,10 @@ function buildAttachmentsGrid(attachments: string[], contentW: number) {
             type: 'div',
             props: {
                 style: { display: 'flex', gap: GAP, width: fullW, height: tileH },
-                children: [GalleryTile(attachments[0], halfW, tileH), GalleryTile(attachments[1], halfW, tileH)],
+                children: [
+                    GalleryTile(attachments[0], halfW, tileH),
+                    GalleryTile(attachments[1], halfW, tileH),
+                ],
             },
         }
     }
@@ -136,12 +139,7 @@ function buildAttachmentsGrid(attachments: string[], contentW: number) {
     return {
         type: 'div',
         props: {
-            style: {
-                display: 'flex',
-                gap: GAP,
-                width: fullW,
-                height: tileH,
-            },
+            style: { display: 'flex', gap: GAP, width: fullW, height: tileH },
             children: [
                 {
                     type: 'div',
@@ -184,7 +182,11 @@ export function buildSatoriInput(input: PostInput) {
 
     const NAME_NUDGE_Y = -4
     const fontFamily = getLocalFontStack(platformStyle)
+
+    // Carte pleine (sans padding), avec coins arrondis et overflow caché
+    const CARD_PAD = 28
     const CONTENT_W = Math.min(920, W - 160)
+    const INNER_W = CONTENT_W - CARD_PAD * 2
 
     const bodyNodes = paragraphsWithWrap(
         splitParagraphs(textMarkdown),
@@ -192,8 +194,8 @@ export function buildSatoriInput(input: PostInput) {
             color: palette.text,
             fontSize: 20,
             lineHeight: 1.4,
-            maxWidth: CONTENT_W,
-            typePreview: previewMode, // pour le suffixe “ …more” en mode less
+            maxWidth: INNER_W,
+            typePreview: previewMode, // gère le “…more” coloré en mode less
         }
     )
 
@@ -205,8 +207,12 @@ export function buildSatoriInput(input: PostInput) {
         type: 'div',
         props: {
             style: {
-                width: W, height: H, backgroundColor: palette.background,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: W,
+                height: H,
+                backgroundColor: palette.background,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontFamily,
             },
             children: {
@@ -216,119 +222,238 @@ export function buildSatoriInput(input: PostInput) {
                         width: CONTENT_W,
                         backgroundColor: palette.card,
                         borderRadius: 16,
+                        overflow: 'hidden', // important pour que les images soient à fleur et respectent les coins
                         boxShadow: '0 8px 28px rgba(0,0,0,0.06)',
-                        padding: 28,
                         display: 'flex',
                         flexDirection: 'column',
                     },
                     children: [
-                        // Header
+                        // --------- Bloc contenu (avec padding) : header ---------
                         {
                             type: 'div',
                             props: {
-                                style: { display: 'flex', alignItems: 'center' },
-                                children: [
-                                    profileDataUrl
-                                        ? {
-                                            type: 'img',
-                                            props: {
-                                                src: profileDataUrl, width: 64, height: 64,
-                                                style: { borderRadius: 32, objectFit: 'cover', border: '1px solid #E5E7EB' },
-                                            },
-                                        }
-                                        : {
-                                            type: 'div',
-                                            props: {
-                                                style: {
-                                                    width: 64, height: 64, borderRadius: 32, backgroundColor: '#D1D5DB',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: '#374151', fontWeight: 700,
+                                style: { display: 'flex', flexDirection: 'column', padding: CARD_PAD },
+                                children: {
+                                    type: 'div',
+                                    props: {
+                                        style: { display: 'flex', alignItems: 'center' },
+                                        children: [
+                                            profileDataUrl
+                                                ? {
+                                                    type: 'img',
+                                                    props: {
+                                                        src: profileDataUrl,
+                                                        width: 64,
+                                                        height: 64,
+                                                        style: {
+                                                            borderRadius: 32,
+                                                            objectFit: 'cover',
+                                                            border: '1px solid #E5E7EB',
+                                                        },
+                                                    },
+                                                }
+                                                : {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: {
+                                                            width: 64,
+                                                            height: 64,
+                                                            borderRadius: 32,
+                                                            backgroundColor: '#D1D5DB',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: '#374151',
+                                                            fontWeight: 700,
+                                                        },
+                                                        children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase(),
+                                                    },
                                                 },
-                                                children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase(),
+                                            {
+                                                type: 'div',
+                                                props: {
+                                                    style: {
+                                                        marginLeft: 14,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        marginTop: NAME_NUDGE_Y,
+                                                    },
+                                                    children: [
+                                                        {
+                                                            type: 'div',
+                                                            props: {
+                                                                style: {
+                                                                    fontSize: 20,
+                                                                    fontWeight: 500,
+                                                                    color: palette.text,
+                                                                    lineHeight: 1.2,
+                                                                },
+                                                                children: `${firstName} ${lastName}`,
+                                                            },
+                                                        },
+                                                        {
+                                                            type: 'div',
+                                                            props: {
+                                                                style: {
+                                                                    fontSize: 14,
+                                                                    color: palette.subtext,
+                                                                    marginTop: 0,
+                                                                },
+                                                                children: headline,
+                                                            },
+                                                        },
+                                                        {
+                                                            type: 'div',
+                                                            props: {
+                                                                style: {
+                                                                    marginTop: 2,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 8,
+                                                                    color: palette.subtext,
+                                                                    fontSize: 14,
+                                                                    lineHeight: 1,
+                                                                    whiteSpace: 'nowrap',
+                                                                },
+                                                                children: [
+                                                                    {
+                                                                        type: 'span',
+                                                                        props: {
+                                                                            children: (timeAgo || '').replace(/^\s*•\s*/, ''),
+                                                                        },
+                                                                    },
+                                                                    { type: 'span', props: { children: '•' } },
+                                                                    {
+                                                                        type: 'div',
+                                                                        props: {
+                                                                            style: { marginLeft: -2, display: 'flex' },
+                                                                            children: IconGlobe(),
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                    ],
+                                                },
                                             },
-                                        },
+                                        ],
+                                    },
+                                },
+                            },
+                        },
+
+                        // --------- Bloc contenu (avec padding) : body ---------
+                        {
+                            type: 'div',
+                            props: {
+                                style: { display: 'flex', flexDirection: 'column', paddingLeft: CARD_PAD, paddingRight: CARD_PAD },
+                                children: [
+                                    { type: 'div', props: { style: { height: 16, display: 'flex' } } },
                                     {
                                         type: 'div',
                                         props: {
-                                            style: { marginLeft: 14, display: 'flex', flexDirection: 'column', marginTop: NAME_NUDGE_Y },
+                                            style: { display: 'flex', flexDirection: 'column' },
+                                            children: bodyNodes,
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+
+                        // --------- Galerie d’images SANS padding (edge-to-edge) ---------
+                        ...(gallery
+                            ? [
+                                { type: 'div', props: { style: { height: 16, display: 'flex' } } },
+                                {
+                                    type: 'div',
+                                    props: {
+                                        style: { display: 'flex', width: CONTENT_W, height: 'auto' as any },
+                                        children: gallery,
+                                    },
+                                },
+                            ]
+                            : []),
+
+                        // --------- Bloc contenu (avec padding) : bottom meta + actions ---------
+                        {
+                            type: 'div',
+                            props: {
+                                style: { display: 'flex', flexDirection: 'column', padding: CARD_PAD },
+                                children: [
+                                    { type: 'div', props: { style: { height: 20, display: 'flex' } } },
+                                    { type: 'div', props: { style: { height: 12, display: 'flex' } } },
+
+                                    // Reactions + comments + reposts
+                                    {
+                                        type: 'div',
+                                        props: {
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                            },
                                             children: [
-                                                { type: 'div', props: { style: { fontSize: 20, fontWeight: 500, color: palette.text, lineHeight: 1.2 }, children: `${firstName} ${lastName}` } },
-                                                { type: 'div', props: { style: { fontSize: 14, color: palette.subtext, marginTop: 0 }, children: headline } },
                                                 {
                                                     type: 'div',
                                                     props: {
-                                                        style: { marginTop: 2, display: 'flex', alignItems: 'center', gap: 8, color: palette.subtext, fontSize: 14, lineHeight: 1, whiteSpace: 'nowrap' },
+                                                        style: { display: 'flex', alignItems: 'center' },
                                                         children: [
-                                                            { type: 'span', props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') } },
-                                                            { type: 'span', props: { children: '•' } },
-                                                            { type: 'div', props: { style: { marginLeft: -2, display: 'flex' }, children: IconGlobe() } },
+                                                            ...(reactiveSvgs.length
+                                                                ? reactiveSvgs.map((src, i) => ReactionBadge(src, i))
+                                                                : []),
+                                                            {
+                                                                type: 'div',
+                                                                props: {
+                                                                    style: {
+                                                                        marginLeft: 8,
+                                                                        fontSize: 20,
+                                                                        color: palette.subtext,
+                                                                    },
+                                                                    children: `${reactions.toLocaleString()} reactions`,
+                                                                },
+                                                            },
+                                                        ],
+                                                    },
+                                                },
+                                                {
+                                                    type: 'div',
+                                                    props: {
+                                                        style: {
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 12,
+                                                            fontSize: 20,
+                                                            color: palette.subtext,
+                                                            whiteSpace: 'nowrap',
+                                                        },
+                                                        children: [
+                                                            `${comments.toLocaleString()} comments`,
+                                                            {
+                                                                type: 'span',
+                                                                props: { style: { opacity: 0.6 }, children: '•' },
+                                                            },
+                                                            `${reposts.toLocaleString()} reposts`,
                                                         ],
                                                     },
                                                 },
                                             ],
                                         },
                                     },
-                                ],
-                            },
-                        },
 
-                        // Spacer
-                        { type: 'div', props: { style: { height: 16 } } },
-
-                        // Body
-                        { type: 'div', props: { style: { display: 'flex', flexDirection: 'column' }, children: bodyNodes } },
-
-                        // Galerie d’images (si présente)
-                        ...(gallery ? [{ type: 'div', props: { style: { height: 16 } } }, gallery] : []),
-
-                        // Divider
-                        { type: 'div', props: { style: { height: 20 } } },
-                        { type: 'div', props: { style: { height: 12 } } },
-
-                        // Reactions + comments + reposts
-                        {
-                            type: 'div',
-                            props: {
-                                style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-                                children: [
+                                    { type: 'div', props: { style: { height: 12, display: 'flex' } } },
                                     {
                                         type: 'div',
                                         props: {
-                                            style: { display: 'flex', alignItems: 'center' },
-                                            children: [
-                                                ...(reactiveSvgs.length ? reactiveSvgs.map((src, i) => ReactionBadge(src, i)) : []),
-                                                {
-                                                    type: 'div',
-                                                    props: {
-                                                        style: { marginLeft: 8, fontSize: 20, color: palette.subtext },
-                                                        children: `${reactions.toLocaleString()} reactions`,
-                                                    },
-                                                },
-                                            ],
+                                            style: { height: 1, backgroundColor: palette.divider, display: 'flex' },
                                         },
                                     },
-                                    {
-                                        type: 'div',
-                                        props: {
-                                            style: { display: 'flex', alignItems: 'center', gap: 12, fontSize: 20, color: palette.subtext, whiteSpace: 'nowrap' },
-                                            children: [
-                                                `${comments.toLocaleString()} comments`,
-                                                { type: 'span', props: { style: { opacity: 0.6 }, children: '•' } },
-                                                `${reposts.toLocaleString()} reposts`,
-                                            ],
-                                        },
-                                    },
+                                    { type: 'div', props: { style: { height: 8, display: 'flex' } } },
+
+                                    // Action buttons
+                                    ActionsBar(palette.subtext),
                                 ],
                             },
                         },
-
-                        // Divider between reactions and action buttons
-                        { type: 'div', props: { style: { height: 12 } } },
-                        { type: 'div', props: { style: { height: 1, backgroundColor: palette.divider } } },
-                        { type: 'div', props: { style: { height: 8 } } },
-
-                        // Action buttons
-                        ActionsBar(palette.subtext),
                     ],
                 },
             },
