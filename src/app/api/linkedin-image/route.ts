@@ -41,6 +41,8 @@ type Payload = {
     // Nouveaux paramètres
     devicePreview?: DevicePreview     // 'mobile' | 'tablet' | 'desktop'
     typePreview?: TypePreview         // 'more' | 'less' (default 'more')
+    attachmentsUrls?: string[]   // ← URLs à télécharger et transformer en data URL
+    attachmentsData?: string[]   // ← si tu passes déjà des data URL
 }
 
 // ----- helpers width / height -----
@@ -239,6 +241,22 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // dans POST(), après résolution de l’avatar :
+        const attachments: string[] = []
+        if (Array.isArray(body.attachmentsData)) {
+            for (const d of body.attachmentsData) {
+                if (typeof d === 'string' && d.startsWith('data:')) attachments.push(d)
+            }
+        }
+        if (Array.isArray(body.attachmentsUrls)) {
+            for (const u of body.attachmentsUrls) {
+                if (typeof u === 'string' && u) {
+                    const d = await imageToDataUrl(u)
+                    if (d) attachments.push(d)
+                }
+            }
+        }
+
         // largeur: size.width prioritaire sinon devicePreview
         const defaultW = widthFromDevice(devicePreview)
         const rawSize = size ?? {}
@@ -294,7 +312,8 @@ export async function POST(req: NextRequest) {
             reposts,
             palette,
             platformStyle,
-            typePreview, // 'more' | 'less'
+            typePreview, // 'more' | 'less',
+            attachments,
         }) as unknown as ReactNode
         const options: SatoriOptions = { width: W, height: H, fonts }
         const svg = await satori(satoriInput, options)
