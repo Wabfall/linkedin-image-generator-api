@@ -34,7 +34,7 @@ function GalleryTile(src: string, w: number, h: number, overlayText?: string) {
                 position: 'relative',
                 width: w,
                 height: h,
-                borderRadius: 12,
+                borderRadius: 0,
                 overflow: 'hidden',
                 backgroundColor: '#E5E7EB',
                 display: 'flex',
@@ -80,7 +80,7 @@ function GalleryTile(src: string, w: number, h: number, overlayText?: string) {
 function buildAttachmentsGrid(attachments: string[], contentW: number) {
     if (!attachments?.length) return null
 
-    const GAP = 8
+    const GAP = 0
     const visible = Math.min(attachments.length, 4)
     const leftover = Math.max(0, attachments.length - visible)
 
