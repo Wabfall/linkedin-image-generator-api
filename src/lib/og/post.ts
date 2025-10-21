@@ -23,6 +23,7 @@ export type PostInput = {
     palette: Palette
     /** windows | mac | ios | android */
     platformStyle: PlatformStyle
+    previewMode: "more" | "less"
 }
 
 export function buildSatoriInput(input: PostInput) {
@@ -30,21 +31,23 @@ export function buildSatoriInput(input: PostInput) {
         W, H, profileDataUrl,
         firstName, lastName, headline, timeAgo,
         textMarkdown, reactions, comments, reposts, palette,
-        platformStyle,
+        platformStyle, previewMode = 'more',
     } = input
 
-    const NAME_NUDGE_Y = -4 // alignement du nom avec la photo
+    const NAME_NUDGE_Y = -4
     const fontFamily = getLocalFontStack(platformStyle)
+    const CONTENT_W = Math.min(920, W - 160)
 
-    const bodyNodes = paragraphsWithWrap(
-        textMarkdown.replace(/\r\n/g, '\n').split(/\n\n+/).map(s => s.trim()).filter(Boolean),
+    // --- BODY
+    let bodyNodes: any[] = []
+
+    bodyNodes = paragraphsWithWrap(
+        splitParagraphs(textMarkdown),
         {
             color: palette.text,
-            fontFamily,
-            fontSize: 18,
-            lineHeight: 1.42857,
-            maxWidth: Math.min(920, W - 160),
-            // platformStyle si tu le passes ici
+            fontSize: 20,
+            lineHeight: 1.4,
+            maxWidth: CONTENT_W,
         }
     )
 
@@ -60,13 +63,13 @@ export function buildSatoriInput(input: PostInput) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily, // ✅ stack locale dépendante de platformStyle
+                fontFamily,
             },
             children: {
                 type: 'div',
                 props: {
                     style: {
-                        width: Math.min(920, W - 160),
+                        width: CONTENT_W,
                         backgroundColor: palette.card,
                         borderRadius: 16,
                         boxShadow: '0 8px 28px rgba(0,0,0,0.06)',
@@ -88,116 +91,50 @@ export function buildSatoriInput(input: PostInput) {
                                                 src: profileDataUrl,
                                                 width: 64,
                                                 height: 64,
-                                                style: {
-                                                    borderRadius: 32,
-                                                    objectFit: 'cover',
-                                                    border: '1px solid #E5E7EB',
-                                                },
+                                                style: { borderRadius: 32, objectFit: 'cover', border: '1px solid #E5E7EB' },
                                             },
                                         }
                                         : {
                                             type: 'div',
                                             props: {
                                                 style: {
-                                                    width: 64,
-                                                    height: 64,
-                                                    borderRadius: 32,
-                                                    backgroundColor: '#D1D5DB',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#374151',
-                                                    fontWeight: 700,
+                                                    width: 64, height: 64, borderRadius: 32, backgroundColor: '#D1D5DB',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: '#374151', fontWeight: 700
                                                 },
-                                                children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase(),
-                                            },
+                                                children: `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()
+                                            }
                                         },
                                     {
                                         type: 'div',
                                         props: {
-                                            style: {
-                                                marginLeft: 14,
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                marginTop: NAME_NUDGE_Y,
-                                            },
+                                            style: { marginLeft: 14, display: 'flex', flexDirection: 'column', marginTop: NAME_NUDGE_Y },
                                             children: [
+                                                { type: 'div', props: { style: { fontSize: 20, fontWeight: 500, color: palette.text, lineHeight: 1.2 }, children: `${firstName} ${lastName}` } },
+                                                { type: 'div', props: { style: { fontSize: 14, color: palette.subtext, marginTop: 0 }, children: headline } },
                                                 {
                                                     type: 'div',
                                                     props: {
-                                                        style: {
-                                                            fontSize: 20,
-                                                            fontWeight: 500,
-                                                            color: palette.text,
-                                                            lineHeight: 1.2,
-                                                        },
-                                                        children: `${firstName} ${lastName}`,
-                                                    },
-                                                },
-                                                {
-                                                    type: 'div',
-                                                    props: {
-                                                        style: {
-                                                            fontSize: 14,
-                                                            color: palette.subtext,
-                                                            marginTop: 0,
-                                                        },
-                                                        children: headline,
-                                                    },
-                                                },
-                                                {
-                                                    type: 'div',
-                                                    props: {
-                                                        style: {
-                                                            marginTop: 2,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 8,
-                                                            color: palette.subtext,
-                                                            fontSize: 14,
-                                                            lineHeight: 1,
-                                                            whiteSpace: 'nowrap',
-                                                        },
+                                                        style: { marginTop: 2, display: 'flex', alignItems: 'center', gap: 8, color: palette.subtext, fontSize: 14, lineHeight: 1, whiteSpace: 'nowrap' },
                                                         children: [
-                                                            {
-                                                                type: 'span',
-                                                                props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') },
-                                                            },
+                                                            { type: 'span', props: { children: (timeAgo || '').replace(/^\s*•\s*/, '') } },
                                                             { type: 'span', props: { children: '•' } },
-                                                            {
-                                                                type: 'div',
-                                                                props: {
-                                                                    style: { marginLeft: -2, display: 'flex' }, // léger décalage
-                                                                    children: IconGlobe(),
-                                                                },
-                                                            },
-                                                        ],
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                    },
-                                ],
-                            },
+                                                            { type: 'div', props: { style: { marginLeft: -2, display: 'flex' }, children: IconGlobe() } },
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
                         },
 
                         // Spacer
                         { type: 'div', props: { style: { height: 16 } } },
 
                         // Body
-                        {
-                            type: 'div',
-                            props: {
-                                style: {
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    fontSize: 20,
-                                    lineHeight: 1,
-                                    color: palette.text,
-                                },
-                                children: bodyNodes,
-                            },
-                        },
+                        { type: 'div', props: { style: { display: 'flex', flexDirection: 'column' }, children: bodyNodes } },
 
                         // Divider
                         { type: 'div', props: { style: { height: 20 } } },
@@ -207,54 +144,37 @@ export function buildSatoriInput(input: PostInput) {
                         {
                             type: 'div',
                             props: {
-                                style: {
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                },
+                                style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
                                 children: [
                                     {
                                         type: 'div',
                                         props: {
                                             style: { display: 'flex', alignItems: 'center' },
                                             children: [
-                                                ...(reactiveSvgs.length
-                                                    ? reactiveSvgs.map((src, i) => ReactionBadge(src, i))
-                                                    : []),
+                                                ...(reactiveSvgs.length ? reactiveSvgs.map((src, i) => ReactionBadge(src, i)) : []),
                                                 {
                                                     type: 'div',
                                                     props: {
-                                                        style: {
-                                                            marginLeft: 8,
-                                                            fontSize: 20,
-                                                            color: palette.subtext,
-                                                        },
-                                                        children: `${reactions.toLocaleString()} reactions`,
-                                                    },
-                                                },
-                                            ],
-                                        },
+                                                        style: { marginLeft: 8, fontSize: 20, color: palette.subtext },
+                                                        children: `${reactions.toLocaleString()} reactions`
+                                                    }
+                                                }
+                                            ]
+                                        }
                                     },
                                     {
                                         type: 'div',
                                         props: {
-                                            style: {
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 12,
-                                                fontSize: 20,
-                                                color: palette.subtext,
-                                                whiteSpace: 'nowrap',
-                                            },
+                                            style: { display: 'flex', alignItems: 'center', gap: 12, fontSize: 20, color: palette.subtext, whiteSpace: 'nowrap' },
                                             children: [
                                                 `${comments.toLocaleString()} comments`,
                                                 { type: 'span', props: { style: { opacity: 0.6 }, children: '•' } },
-                                                `${reposts.toLocaleString()} reposts`,
-                                            ],
-                                        },
-                                    },
-                                ],
-                            },
+                                                `${reposts.toLocaleString()} reposts`
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
                         },
 
                         // Divider between reactions and action buttons
@@ -264,9 +184,9 @@ export function buildSatoriInput(input: PostInput) {
 
                         // Action buttons
                         ActionsBar(palette.subtext),
-                    ],
-                },
-            },
-        },
+                    ]
+                }
+            }
+        }
     } as any
 }

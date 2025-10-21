@@ -7,17 +7,24 @@ import { buildSatoriInput } from '@/lib/og/post'
 import { publicSvgToDataUrl } from '@/lib/og/reactions'
 import { ensureFontsLocalOnly, getSatoriFonts } from '@/lib/og/fonts'
 
-// types
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+// ----- types -----
 type PlatformStyle = 'windows' | 'mac' | 'ios' | 'android'
+type DevicePreview = 'mobile' | 'tablet' | 'desktop'
+type TypePreview = 'more' | 'less'
+
 type Payload = {
     profileImageUrl?: string
-    profileSvgMarkup?: unknown           // 👈 unknown pour éviter trims sauvages
+    profileSvgMarkup?: unknown
     profileSvgPublicPath?: string
+
     firstName: string
     lastName: string
     headline?: string
     timeAgo?: string
-    textMarkdown: unknown                // 👈 unknown → on normalise en string
+    textMarkdown: unknown
     reactions?: number
     comments?: number
     reposts?: number
@@ -28,14 +35,24 @@ type Payload = {
         subtext?: string
         divider?: string
     }
-    size?: { width?: number; height?: number | 'auto' }  // width/height optionnels
+    size?: { width?: number; height?: number | 'auto' }
     platformStyle?: PlatformStyle
+
+    // Nouveaux paramètres
+    devicePreview?: DevicePreview     // 'mobile' | 'tablet' | 'desktop'
+    typePreview?: TypePreview         // 'more' | 'less' (default 'more')
 }
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+// ----- helpers width / height -----
+function widthFromDevice(device?: DevicePreview): number {
+    switch (device) {
+        case 'mobile': return 800
+        case 'tablet': return 1000
+        case 'desktop':
+        default: return 1200
+    }
+}
 
-// ----- utils -----
 function estimateAutoHeight(opts: {
     W: number
     text: string
@@ -48,13 +65,14 @@ function estimateAutoHeight(opts: {
     const {
         W,
         text,
-        bodyFontSize = 18,
-        lineHeight = 1.42857,
+        bodyFontSize = 20,
+        lineHeight = 1.4,
         maxWidthInner = Math.min(920, W - 160),
         paragraphSpacing = 16,
-        safetyMultiplier = 1.35,
+        safetyMultiplier = 1.2, // ← un peu serré par défaut
     } = opts
 
+    // (doivent refléter post.ts)
     const PADDING_CARD = 28
     const HEADER_BLOCK_H = 64 + 2
     const SPACER_ABOVE_BODY = 16
@@ -102,9 +120,9 @@ function estimateAutoHeight(opts: {
         }
     }
 
-    const emojiExtraLines = Math.ceil(emojiCount * 0.15)
-    const styleExtraLines = Math.ceil(boldLikeSignals * 0.25)
-    const breaksExtraLines = Math.ceil(explicitBreaks * 0.25)
+    const emojiExtraLines = Math.ceil(emojiCount * 0.10)
+    const styleExtraLines = Math.ceil(boldLikeSignals * 0.15)
+    const breaksExtraLines = Math.ceil(explicitBreaks * 0.10)
     totalLines += emojiExtraLines + styleExtraLines + breaksExtraLines
 
     const bodyLinePx = bodyFontSize * lineHeight
@@ -124,9 +142,29 @@ function estimateAutoHeight(opts: {
     innerHeight *= safetyMultiplier
 
     const total = Math.ceil(innerHeight + PADDING_CARD * 2 + 8)
-    return (total + 7) & ~7
+    // pas d’arrondi agressif au multiple de 8
+    return Math.round(total)
 }
 
+// tronque le texte à ~3 lignes estimées pour le mode 'less'
+function truncateToLines(text: string, W: number, lines = 3): string {
+    const maxWidthInner = Math.min(920, W - 160)
+    const bodyFontSize = 20
+    const avgCharPx = 0.52 * bodyFontSize
+    const charsPerLine = Math.max(14, Math.floor(maxWidthInner / avgCharPx))
+    const hardLimit = Math.max(20, lines * charsPerLine)
+
+    const clean = text.replace(/\r\n/g, '\n')
+    if (clean.length <= hardLimit) return clean
+
+    let cut = hardLimit
+    while (cut > Math.floor(hardLimit * 0.8) && clean[cut] && !/\s/.test(clean[cut])) {
+        cut--
+    }
+    return clean.slice(0, cut).trimEnd()
+}
+
+// ----- other helpers -----
 async function imageToDataUrl(url: string): Promise<string | null> {
     try {
         const r = await fetch(url)
@@ -147,28 +185,19 @@ async function resolveProfileDataUrl(input: {
     profileSvgPublicPath?: string
 }) {
     const { profileImageUrl, profileSvgMarkup, profileSvgPublicPath } = input
-
-    if (profileImageUrl) {
-        const d = await imageToDataUrl(profileImageUrl)
-        if (d) return d
-    }
-    if (typeof profileSvgMarkup === 'string' && profileSvgMarkup.trim()) {
-        return svgMarkupToDataUrl(profileSvgMarkup)
-    }
-    if (profileSvgPublicPath) {
-        const d = publicSvgToDataUrl(profileSvgPublicPath)
-        if (d) return d
-    }
+    if (profileImageUrl) { const d = await imageToDataUrl(profileImageUrl); if (d) return d }
+    if (typeof profileSvgMarkup === 'string' && profileSvgMarkup.trim()) return svgMarkupToDataUrl(profileSvgMarkup)
+    if (profileSvgPublicPath) { const d = publicSvgToDataUrl(profileSvgPublicPath); if (d) return d }
     return publicSvgToDataUrl('icons/avatar-default.svg') || null
 }
 
+// ----- handlers -----
 export async function GET() {
     return NextResponse.json({ ok: true, message: 'POST an object to get a PNG back.' })
 }
 
 export async function POST(req: NextRequest) {
     try {
-        // lecture UTF-8 pour garder accents/émojis
         const bytes = await req.arrayBuffer()
         const utf8 = new TextDecoder('utf-8').decode(bytes)
         const body = JSON.parse(utf8) as Payload
@@ -188,13 +217,11 @@ export async function POST(req: NextRequest) {
             theme = {},
             size,
             platformStyle = 'windows',
+            devicePreview,
+            typePreview = 'more',
         } = body || {}
 
-        // 🔒 Normalisation / validation des champs sensibles
-        const text = typeof textMarkdown === 'string'
-            ? textMarkdown
-            : String(textMarkdown ?? '')
-
+        const text = typeof textMarkdown === 'string' ? textMarkdown : String(textMarkdown ?? '')
         if (!firstName || !lastName || text.trim().length === 0) {
             return NextResponse.json(
                 { error: 'Missing required fields: firstName, lastName, textMarkdown (non-empty)' },
@@ -202,47 +229,46 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // fonts (assure l’import)
         ensureFontsLocalOnly()
         const fonts = getSatoriFonts()
         if (!fonts.length) {
             return NextResponse.json(
-                { error: 'Fonts missing. Place Inter-Regular.ttf in /public/fonts' },
+                { error: 'Fonts missing. Place fonts in /public/fonts (e.g., Inter/Inter-Regular.ttf)' },
                 { status: 500 }
             )
         }
 
-        // Normalisation de size → toujours { width: number; height?: number|'auto' }
+        // largeur: size.width prioritaire sinon devicePreview
+        const defaultW = widthFromDevice(devicePreview)
         const rawSize = size ?? {}
         const safeSize: { width: number; height?: number | 'auto' } = {
-            width: Number(rawSize.width) || 1200,
+            width: Number(rawSize.width) || defaultW,
             ...(typeof rawSize.height !== 'undefined' ? { height: rawSize.height } : {}),
         }
+        const W = clamp(Number(safeSize.width) || defaultW, 600, 2000)
 
-        // Largeur (clampée)
-        const W = clamp(Number(safeSize.width) || 1200, 600, 2000)
+        // texte effectif pour estimation (less = tronqué à ~3 lignes)
+        const effectiveTextForEstimate =
+            typePreview === 'less' ? truncateToLines(text, W, 3) + " ... more" : text
 
-        // Estimation basée contenu (toujours calculée)
         const estimatedH = estimateAutoHeight({
             W,
-            text,
-            bodyFontSize: 18,
-            lineHeight: 1.42857,
+            text: effectiveTextForEstimate,
+            bodyFontSize: 20,
+            lineHeight: 1.4,
             maxWidthInner: Math.min(920, W - 160),
             paragraphSpacing: 16,
-            safetyMultiplier: 1,
+            safetyMultiplier: 1.2,
         })
 
-        // Hauteur finale (pilotée par l’estimateur)
+        // hauteur finale
         let H: number
         if (safeSize.height === 'auto' || typeof safeSize.height === 'undefined') {
             H = clamp(estimatedH, 800, 4000)
-            console.log("H" + H)
-            console.log("EstimatedH" + estimatedH)
         } else {
             const explicitH = Number(safeSize.height) || 0
-            console.log("EstimatedH" + estimatedH)
             H = clamp(Math.max(explicitH, estimatedH), 800, 4000)
-            console.log("H" + H)
         }
 
         const palette = buildPalette(theme)
@@ -252,22 +278,24 @@ export async function POST(req: NextRequest) {
             profileSvgPublicPath,
         })
 
+        // texte rendu (identique à estimation en mode less)
+        const effectiveTextForRender = effectiveTextForEstimate
         const satoriInput = buildSatoriInput({
             W,
-            H, // ← H est bien défini (nombre), côté post.ts tu peux aussi le rendre optionnel si tu veux
+            H,
             profileDataUrl,
             firstName,
             lastName,
             headline,
             timeAgo,
-            textMarkdown: text, // ← on passe la version normalisée
+            textMarkdown: effectiveTextForRender,
             reactions,
             comments,
             reposts,
             palette,
             platformStyle,
+            previewMode: typePreview, // 'more' | 'less'
         }) as unknown as ReactNode
-
         const options: SatoriOptions = { width: W, height: H, fonts }
         const svg = await satori(satoriInput, options)
 
