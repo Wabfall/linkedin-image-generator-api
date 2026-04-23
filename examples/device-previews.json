@@ -1,0 +1,11 @@
+{
+  "_comment": "Change devicePreview to: 'mobile' (800px), 'tablet' (1000px), 'desktop' (1200px, default)",
+  "firstName": "Alex",
+  "lastName": "Martin",
+  "headline": "Product Designer",
+  "textMarkdown": "Layout adapts to device width.\n\nUse `devicePreview` to control the output width:\n- **mobile** → 800 px\n- **tablet** → 1000 px\n- **desktop** → 1200 px (default)\n\nOr set a custom width with `size.width`.",
+  "devicePreview": "mobile",
+  "reactions": 54,
+  "comments": 9,
+  "reposts": 3
+}

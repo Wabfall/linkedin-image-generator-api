@@ -1,11 +1,12 @@
 {
-  "name": "linkedin-post-generator-api",
+  "name": "linkedin-image-generator-api",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:images": "bash scripts/generate-test-images.sh"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

@@ -1,0 +1,11 @@
+{
+  "_comment": "Change platformStyle to: 'windows' (Segoe UI), 'mac' (SF Pro Text), 'ios' (SF Pro Text), 'android' (Roboto)",
+  "firstName": "Alex",
+  "lastName": "Martin",
+  "headline": "Mobile Developer",
+  "textMarkdown": "Typography matters.\n\nThis post renders with platform-native fonts:\n- **windows** → Segoe UI\n- **mac / ios** → SF Pro Text\n- **android** → Roboto\n\nSwap `platformStyle` to see the difference.",
+  "platformStyle": "mac",
+  "reactions": 132,
+  "comments": 21,
+  "reposts": 8
+}

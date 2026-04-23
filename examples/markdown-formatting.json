@@ -1,0 +1,9 @@
+{
+  "firstName": "Alex",
+  "lastName": "Martin",
+  "headline": "Software Engineer",
+  "textMarkdown": "A quick tour of supported **markdown** formatting:\n\n**Bold text** stands out clearly.\n*Italic text* adds emphasis.\n[Clickable links](https://example.com) render in LinkedIn blue.\n#Hashtags are highlighted automatically.\n\nYou can combine them: **[bold link](https://example.com)** or *italic with #hashtag*.\n\nLine breaks work with \\n inside the JSON string.",
+  "reactions": 89,
+  "comments": 14,
+  "reposts": 6
+}

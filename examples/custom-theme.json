@@ -1,0 +1,16 @@
+{
+  "firstName": "Alex",
+  "lastName": "Martin",
+  "headline": "Software Engineer",
+  "textMarkdown": "Dark mode LinkedIn post? Yes, it's possible.\n\nAll colors are fully customizable via the `theme` object:\n- **background** → page color\n- **card** → post card color\n- **text** → primary text\n- **subtext** → secondary text\n- **divider** → separator lines",
+  "theme": {
+    "background": "#1A1A2E",
+    "card": "#16213E",
+    "text": "#E0E0E0",
+    "subtext": "#9E9E9E",
+    "divider": "#2A2A4A"
+  },
+  "reactions": 178,
+  "comments": 29,
+  "reposts": 11
+}

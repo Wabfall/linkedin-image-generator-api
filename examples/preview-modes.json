@@ -1,0 +1,11 @@
+{
+  "_comment": "Change typePreview to 'more' (full text) or 'less' (truncated to ~3 lines with '…more')",
+  "firstName": "Alex",
+  "lastName": "Martin",
+  "headline": "Content Creator",
+  "textMarkdown": "This is a long post that gets truncated in 'less' mode.\n\nThe first paragraph is always visible, but everything after the first few lines is cut off with a '…more' suffix — just like LinkedIn's native app behavior.\n\nParagraph three would be hidden in 'less' mode.\n\nAnd so would paragraph four.\n\nThis is useful for generating post preview images before the user clicks 'see more'.",
+  "typePreview": "less",
+  "reactions": 95,
+  "comments": 17,
+  "reposts": 5
+}
