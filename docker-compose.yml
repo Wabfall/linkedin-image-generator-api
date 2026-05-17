@@ -2,7 +2,11 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+    volumes:
+      # Mount emoji SVGs locally to avoid slow Windows→WSL2 file transfer.
+      # Remove this volume on Linux VPS (emojis are baked into the image).
+      - ./public/emoji:/app/public/emoji:ro
