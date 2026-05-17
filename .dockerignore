@@ -7,7 +7,8 @@ docs
 *.md
 .env*
 npm-debug.log*
-# ~7000 emoji SVGs slow down Docker build context on Windows/WSL2.
-# Mounted as a volume locally via docker-compose.yml.
-# Remove this line when building on Linux VPS.
+# public/ assets slow down Docker build context on Windows/WSL2.
+# Mounted as volumes locally via docker-compose.yml.
+# Remove these lines when building on Linux VPS.
 public/emoji
+public/fonts
