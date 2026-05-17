@@ -28,6 +28,35 @@ The API renders a complete LinkedIn post — profile header, formatted body text
 | TypeScript | Type safety |
 | Bundled fonts | Inter, SF Pro Text, Segoe UI, Roboto, Noto Emoji |
 
+## Docker
+
+```bash
+docker compose up -d
+```
+
+The API is available at `http://localhost:3000/api/linkedin-image`.
+
+**VPS deployment (behind Traefik):** Create a `docker-compose.override.yml` next to this repo's `docker-compose.yml` on your server — Docker Compose merges it automatically:
+
+```yaml
+services:
+  app:
+    ports: []
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.linkedin.rule=Host(`your-subdomain.yourdomain.com`)"
+      - "traefik.http.routers.linkedin.entrypoints=websecure"
+      - "traefik.http.routers.linkedin.tls.certresolver=letsencrypt"
+
+networks:
+  traefik-public:
+    external: true
+```
+
+This file stays on your server — never commit it.
+
 ## Quick start
 
 ### Requirements
