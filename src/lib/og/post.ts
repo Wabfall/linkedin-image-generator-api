@@ -21,7 +21,7 @@ export type PostInput = {
     reposts: number
     palette: Palette
     platformStyle: PlatformStyle
-    previewMode?: 'more' | 'less'
+    typePreview?: 'more' | 'less'
     /** Liste d’images (data URL ou URL absolue déjà transformée en data URL) */
     attachments?: string[]
 }
@@ -176,7 +176,7 @@ export function buildSatoriInput(input: PostInput) {
         W, H, profileDataUrl,
         firstName, lastName, headline, timeAgo,
         textMarkdown, reactions, comments, reposts, palette,
-        platformStyle, previewMode = 'more',
+        platformStyle, typePreview = 'more',
         attachments = [],
     } = input
 
@@ -195,7 +195,7 @@ export function buildSatoriInput(input: PostInput) {
             fontSize: 20,
             lineHeight: 1.4,
             maxWidth: INNER_W,
-            typePreview: previewMode, // gère le “…more” coloré en mode less
+            typePreview: typePreview, // gère le “…more” coloré en mode less
         }
     )
 

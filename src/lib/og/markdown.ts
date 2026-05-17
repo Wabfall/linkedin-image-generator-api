@@ -115,7 +115,7 @@ export type ParagraphRenderOptions = {
     lineHeight?: number | string
     paragraphSpacing?: number
     maxWidth?: number
-    typePreview: "more" | "less"
+    typePreview?: "more" | "less"
 
     platformStyle?: PlatformStyle
     emojiSizePx?: number
